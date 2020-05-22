@@ -4,10 +4,15 @@ import java.util.*
 enum class MESSAGES(val msg: String) {
     ENTER_PEOPLE_NUM("Enter the number of people:"),
     ENTER_PEOPLE("Enter all people:"),
-    ENTER_QUERIES_NUM("Enter the number of search queries:"),
-    ENTER_QUERY_DATA("Enter data to search people:"),
-    SEARCH_RESULTS("Found people:"),
-    NO_SEARCH_RESULTS("No matching people found.")
+    MENU_HEADER("=== Menu ==="),
+    MENU_ITEM_SEARCH("1. Find a person"),
+    MENU_ITEM_PRINT_ALL("2. Print all people"),
+    MENU_ITEM_EXIT("0. Exit"),
+    MENU_ITEM_ERR("Incorrect option! Try again."),
+    ENTER_QUERY_DATA("Enter a name or email to search all suitable people."),
+    NO_SEARCH_RESULTS("No matching people found."),
+    LIST_HEADER("=== List of people ==="),
+    BYE("Bye!")
 }
 
 class SearchData {
@@ -20,6 +25,13 @@ class SearchData {
     fun search(query: String): Map<Int, String> {
         return items.filterValues { it.toUpperCase().contains(query.toUpperCase()) }
     }
+}
+
+fun printMenu() {
+    println(MESSAGES.MENU_HEADER.msg)
+    println(MESSAGES.MENU_ITEM_SEARCH.msg)
+    println(MESSAGES.MENU_ITEM_PRINT_ALL.msg)
+    println(MESSAGES.MENU_ITEM_EXIT.msg)
 }
 
 fun main() {
@@ -38,21 +50,36 @@ fun main() {
     }
     println()
 
+    var menuItem: String
     do {
-        println(MESSAGES.ENTER_QUERIES_NUM.msg)
-        count = scanner.nextLine().toIntOrNull()
-    } while (count == null || count < 1)
-    println()
-
-    repeat(count) {
-        println(MESSAGES.ENTER_QUERY_DATA.msg)
-        val results = searchData.search(scanner.nextLine())
-        if (results.isEmpty()) {
-            println(MESSAGES.NO_SEARCH_RESULTS.msg)
-        } else {
-            println(MESSAGES.SEARCH_RESULTS.msg)
-            results.values.map(::println)
+        printMenu()
+        menuItem = scanner.nextLine()
+        when (menuItem) {
+            "0" -> {}
+            "1" -> {
+                println()
+                println(MESSAGES.ENTER_QUERY_DATA.msg)
+                val results = searchData.search(scanner.nextLine())
+                if (results.isEmpty()) {
+                    println(MESSAGES.NO_SEARCH_RESULTS.msg)
+                } else {
+                    results.values.map(::println)
+                }
+                println()
+            }
+            "2" -> {
+                println()
+                println(MESSAGES.LIST_HEADER.msg)
+                searchData.items.values.map(::println)
+                println()
+            }
+            else -> {
+                println(MESSAGES.MENU_ITEM_ERR.msg)
+                println()
+            }
         }
-        println()
-    }
+    } while (menuItem != "0")
+
+    println()
+    println(MESSAGES.BYE.msg)
 }
