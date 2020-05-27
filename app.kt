@@ -1,9 +1,9 @@
 package search
+import java.io.File
 import java.util.*
 
 enum class MESSAGES(val msg: String) {
-    ENTER_PEOPLE_NUM("Enter the number of people:"),
-    ENTER_PEOPLE("Enter all people:"),
+    ERROR_LOADING_DATA("Error loading data from file"),
     MENU_HEADER("=== Menu ==="),
     MENU_ITEM_SEARCH("1. Find a person"),
     MENU_ITEM_PRINT_ALL("2. Print all people"),
@@ -12,11 +12,16 @@ enum class MESSAGES(val msg: String) {
     ENTER_QUERY_DATA("Enter a name or email to search all suitable people."),
     NO_SEARCH_RESULTS("No matching people found."),
     LIST_HEADER("=== List of people ==="),
+    INCORRECT_ARGUMENTS("Correct argument name is --data"),
     BYE("Bye!")
 }
 
 class SearchData {
     val items = mutableMapOf<Int, String>()
+
+    fun loadFromFile(filePath: String?) {
+        File(filePath).forEachLine { add(it) }
+    }
 
     fun add(item: String) {
         items[items.size] = item
@@ -34,21 +39,25 @@ fun printMenu() {
     println(MESSAGES.MENU_ITEM_EXIT.msg)
 }
 
-fun main() {
+fun main(args: Array<String>) {
+    val argName = args.getOrNull(0)
+    val argValue = args.getOrNull(1)
+
+    if (null == argName || "--data" != argName || null == argValue) {
+        println(MESSAGES.INCORRECT_ARGUMENTS.msg)
+        println(MESSAGES.BYE.msg)
+        return
+    }
+
     val scanner = Scanner(System.`in`)
     val searchData = SearchData()
-
-    var count: Int?
-    do {
-        println(MESSAGES.ENTER_PEOPLE_NUM.msg)
-        count = scanner.nextLine().toIntOrNull()
-    } while (count == null || count < 1)
-
-    println(MESSAGES.ENTER_PEOPLE.msg)
-    repeat(count) {
-        searchData.add(scanner.nextLine())
+    try {
+        searchData.loadFromFile(argValue)    
+    } catch (e: Throwable) {
+        println(MESSAGES.ERROR_LOADING_DATA.msg)
+        return
     }
-    println()
+    
 
     var menuItem: String
     do {

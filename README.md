@@ -11,3 +11,5 @@ Build app:
 Run:
 
     java -jar app.jar
+    // with data_sample file:
+    java -jar app.jar --data data_sample.txt
