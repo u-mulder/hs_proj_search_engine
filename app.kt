@@ -18,9 +18,24 @@ enum class MESSAGES(val msg: String) {
 
 class SearchData {
     val items = mutableMapOf<Int, String>()
+    val searchIndexes = mutableMapOf<String, ArrayList<Int>>()
 
     fun loadFromFile(filePath: String?) {
-        File(filePath).forEachLine { add(it) }
+        var counter = 0
+        File(filePath).forEachLine {
+            add(it)
+
+            for (part in it.split(" ")) {
+                val upperPart = part.toUpperCase()
+                if (!searchIndexes.containsKey(upperPart)) {
+                    searchIndexes[upperPart] = arrayListOf<Int>()
+                }
+
+                searchIndexes[upperPart]?.add(counter)
+            }
+
+            counter++
+        }
     }
 
     fun add(item: String) {
@@ -28,7 +43,16 @@ class SearchData {
     }
 
     fun search(query: String): Map<Int, String> {
-        return items.filterValues { it.toUpperCase().contains(query.toUpperCase()) }
+        var results = mutableMapOf<Int, String>()
+
+        val upperQuery = query.toUpperCase()
+        if (searchIndexes.containsKey(upperQuery)) {
+            for (index in searchIndexes[upperQuery]!!) {
+                results[results.size] = items[index]!!
+            }
+        }
+
+        return results
     }
 }
 
@@ -57,7 +81,6 @@ fun main(args: Array<String>) {
         println(MESSAGES.ERROR_LOADING_DATA.msg)
         return
     }
-    
 
     var menuItem: String
     do {
