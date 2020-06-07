@@ -9,11 +9,30 @@ enum class MESSAGES(val msg: String) {
     MENU_ITEM_PRINT_ALL("2. Print all people"),
     MENU_ITEM_EXIT("0. Exit"),
     MENU_ITEM_ERR("Incorrect option! Try again."),
+    ENTER_STRATEGY("Select a matching strategy: "),
+    INCORRECT_STRATEGY("Incorrect strategy. Allowed strategies: "),
     ENTER_QUERY_DATA("Enter a name or email to search all suitable people."),
     NO_SEARCH_RESULTS("No matching people found."),
     LIST_HEADER("=== List of people ==="),
     INCORRECT_ARGUMENTS("Correct argument name is --data"),
     BYE("Bye!")
+}
+
+enum class SEARCH_STRATEGIES {
+    ALL,
+    ANY,
+    NONE;
+
+    companion object {
+        fun getNames(): String {
+            val names = mutableListOf<String>()
+            names.add(ALL.name)
+            names.add(ANY.name)
+            names.add(NONE.name)
+
+            return names.joinToString()
+        }
+    }
 }
 
 class SearchData {
@@ -42,19 +61,91 @@ class SearchData {
         items[items.size] = item
     }
 
-    fun search(query: String): Map<Int, String> {
+    fun search(query: String, strategy: String): Map<Int, String> {
         var results = mutableMapOf<Int, String>()
+        val queryParts = query.toUpperCase().split(" ")
+        var keysMap = mutableMapOf<Int, Boolean>()
 
-        val upperQuery = query.toUpperCase()
-        if (searchIndexes.containsKey(upperQuery)) {
-            for (index in searchIndexes[upperQuery]!!) {
-                results[results.size] = items[index]!!
+        when (strategy) {
+            SEARCH_STRATEGIES.ALL.name -> {
+                var firstRun = true
+
+                for (part in queryParts) {
+                    // if part is not found in searchIndexes, then
+                    // we will not find anything with ALL strategy
+                    if (!searchIndexes.containsKey(part)) {
+                        // if we already have keys - remove them
+                        if (0 < keysMap.count()) {
+                            keysMap.clear()
+                        }
+
+                        break
+                    }
+
+                    // for the first iteration we just select indexes of first part of query
+                    if (firstRun) {
+                        firstRun = false
+                        for (key in searchIndexes[part]!!) {
+                            keysMap[key] = true
+                        }
+
+                        continue
+                    }
+
+                    // for second and other iterations we check which keys 
+                    // exist both in `keysMap` and in `searchIndexes[part]`
+                    keysMap = keysMap
+                        .filterKeys { k: Int -> searchIndexes[part]!!.contains(k) }
+                        .toMutableMap()
+
+                    if (0 == keysMap.count()) {
+                        break
+                    }
+                }
+            }
+            SEARCH_STRATEGIES.ANY.name -> {
+                keysMap = getKeysForStrategyAny(queryParts)
+            }
+            SEARCH_STRATEGIES.NONE.name -> {
+                var keysMapForAny = getKeysForStrategyAny(queryParts)
+
+                for (key in 0..items.size - 1) {
+                    if (false == keysMapForAny.containsKey(key)) {
+                        keysMap[key] = true
+                    }
+                }
+            }
+        }
+
+        if (0 < keysMap.count()) {
+            for (key in keysMap.keys) {
+                results[results.size] = items[key]!!
             }
         }
 
         return results
     }
+
+    fun getKeysForStrategyAny(queryParts: List<String>): MutableMap<Int, Boolean> {
+        var keys = mutableMapOf<Int, Boolean>()
+
+        for (part in queryParts) {
+            // if part is not found in searchIndexes,
+            // we just skip it with ANY strategy
+            if (!searchIndexes.containsKey(part)) {
+                continue
+            }
+
+            for (key in searchIndexes[part]!!) {
+                keys[key] = true
+            }
+        }
+
+        return keys
+    }
 }
+
+fun listsIntersect() {}
 
 fun printMenu() {
     println(MESSAGES.MENU_HEADER.msg)
@@ -89,9 +180,29 @@ fun main(args: Array<String>) {
         when (menuItem) {
             "0" -> {}
             "1" -> {
+                var strategy:String
+                var isAllowed = false
+
+                do {
+                    println()
+                    println(MESSAGES.ENTER_STRATEGY.msg)
+                    strategy = scanner.nextLine().toUpperCase()
+                    for (strategyEnum in SEARCH_STRATEGIES.values()) {
+                        if (strategy == strategyEnum.name) {
+                            isAllowed = true
+                            break
+                        }
+                    }
+
+                    if (!isAllowed) {
+                        println()
+                        println(MESSAGES.INCORRECT_STRATEGY.msg + SEARCH_STRATEGIES.getNames())
+                    }
+                } while (!isAllowed)
+
                 println()
                 println(MESSAGES.ENTER_QUERY_DATA.msg)
-                val results = searchData.search(scanner.nextLine())
+                val results = searchData.search(scanner.nextLine(), strategy)
                 if (results.isEmpty()) {
                     println(MESSAGES.NO_SEARCH_RESULTS.msg)
                 } else {
