@@ -145,8 +145,6 @@ class SearchData {
     }
 }
 
-fun listsIntersect() {}
-
 fun printMenu() {
     println(MESSAGES.MENU_HEADER.msg)
     println(MESSAGES.MENU_ITEM_SEARCH.msg)
